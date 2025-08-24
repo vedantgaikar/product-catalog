@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Product Catalog</title>
+</head>
+<body>
+  <h1>Product Catalog</h1>
+  <a href="/upload">Add New Product</a>
+  <ul>
+    {% for product in catalog %}
+      <li>
+        <img src="https://{{s3_bucket}}.s3.{{s3_region}}.amazonaws.com/images/{{ product.image }}" width="100">
+        <strong>{{ product.name }}</strong> - ${{ product.price }}
+        <a href="/edit/{{ loop.index0 }}">Edit</a>
+        <a href="/delete/{{ loop.index0 }}">Delete</a>
+      </li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
