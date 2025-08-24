@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for
-import boto3, json, os
+from flask import Flask, render_template, request, redirect, url_for, send_file
+import boto3, json, csv, io
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -26,7 +26,12 @@ def save_catalog(catalog):
 @app.route('/')
 def index():
     catalog = load_catalog()
-    return render_template('index.html', catalog=catalog)
+    return render_template(
+        'index.html',
+        catalog=catalog,
+        s3_bucket=S3_BUCKET,
+        s3_region=S3_REGION
+    )
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
@@ -60,9 +65,26 @@ def edit(product_id):
 @app.route('/delete/<int:product_id>')
 def delete(product_id):
     catalog = load_catalog()
-    product = catalog.pop(product_id)
+    catalog.pop(product_id)
     save_catalog(catalog)
     return redirect(url_for('index'))
+
+# NEW: Export catalog as CSV
+@app.route('/export')
+def export_csv():
+    catalog = load_catalog()
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["name", "price", "image"])
+    writer.writeheader()
+    writer.writerows(catalog)
+    output.seek(0)
+
+    return send_file(
+        io.BytesIO(output.getvalue().encode()),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='catalog.csv'
+    )
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
